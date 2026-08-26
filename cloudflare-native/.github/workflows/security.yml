@@ -30,4 +30,4 @@ jobs:
       product: __PRODUCT__
       scan_container: false # no Dockerfile — skip Trivy, keep Semgrep + Gitleaks + osv
       node_version: '22'
-    secrets: inherit
+    # security.yml declares no secrets -- nothing to pass (no secrets: inherit).
