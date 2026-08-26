@@ -14,8 +14,8 @@
 # findings, add a modules-style .checkov.baseline, then flip soft_fail: false.
 #
 # actions-security (zizmor) is added regardless of the app-vs-IaC split above:
-# it scans this repo's OWN .github/workflows/*.yml. Non-blocking on first
-# rollout; flip `blocking: true` after triaging.
+# it scans this repo's OWN .github/workflows/*.yml. Blocking — the initial
+# rollout ran clean, no findings.
 #
 # NOTE: this is the template repo — keep this file in sync with qnsc-infra.
 # =============================================================================
@@ -82,3 +82,5 @@ jobs:
       contents: read
       security-events: write
     uses: QNSC-VN/qnsc-ci/.github/workflows/actions-security.yml@v1
+    with:
+      blocking: true
