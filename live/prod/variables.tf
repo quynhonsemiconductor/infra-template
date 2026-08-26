@@ -73,3 +73,20 @@ variable "single_tenant_slug" {
   default     = ""
   description = "single mode only: url-safe slug of the one tenant."
 }
+
+variable "alarm_emails" {
+  type        = list(string)
+  default     = []
+  description = "Emails subscribed to the CloudWatch alarm SNS topic (module.observability). Empty = alarms fire with nowhere to notify — set this before go-live."
+}
+
+variable "otlp_endpoint" {
+  type        = string
+  default     = ""
+  description = <<-EOT
+    Grafana Cloud's unified OTLP endpoint (qnsc-infra/live/observability's
+    otlp_endpoint output). Empty (the default) makes every otel_agent module
+    below a no-op — OTEL_ENABLED stays "false" and no sidecar container is
+    created, so the app is never told to export into a void.
+  EOT
+}

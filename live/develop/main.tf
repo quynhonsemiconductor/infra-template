@@ -109,14 +109,53 @@ module "secrets" {
   # recreate. Prod keeps the default recovery window for safety.
   recovery_window_days = 0
 
-  secret_names = {
+  secret_names = merge(var.otlp_endpoint == "" ? {} : {
+    # The COMPLETE Authorization header the collector sidecar sends upstream,
+    # e.g. `Basic base64(instanceID:token)` — not the bare token. See
+    # modules/observability-agent's README for the exact
+    # `aws secretsmanager put-secret-value` command, filled with
+    # qnsc-infra/live/observability's otlp_stack_id + otlp_push_token outputs.
+    "observability-token" = "Authorization header for the OTLP backend (e.g. 'Basic <base64>')"
+    }, {
     "db-url"      = "PostgreSQL connection URL for the app"
     "jwt-private" = "EC P-256 (ES256) private key (PEM, base64-encoded)"
     "jwt-public"  = "EC P-256 (ES256) public key (PEM, base64-encoded)"
     "csrf-secret" = "CSRF token signing secret"
-  }
+  })
 
   tags = { Environment = local.env }
+}
+
+# ── OpenTelemetry sidecars ────────────────────────────────────────────────────
+# One per task, not one shared collector — each pushes straight out to
+# Grafana Cloud over the task's own NAT egress. No ingress, no gateway, no
+# tunnel needed: see qnsc-infra/live/observability's header comment for why.
+# Both are a no-op until var.otlp_endpoint is set AND the observability-token
+# secret holds a value — the module returns empty lists, and OTEL_ENABLED
+# below is gated on the same flag, so the app is never told to export into a
+# void. Turning telemetry on is then a one-line change per environment.
+module "otel_agent_api" {
+  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.0"
+
+  product       = "__PRODUCT__"
+  env           = local.env
+  otlp_endpoint = var.otlp_endpoint
+  # try(): the secret is not created while the OTel path is dormant, and this
+  # module is a no-op in that state anyway — an absent ARN is correct input.
+  token_secret_arn = try(module.secrets.secret_arns["observability-token"], "")
+  log_group        = "/ecs/${local.name}-api"
+  region           = local.region
+}
+
+module "otel_agent_worker" {
+  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.0"
+
+  product          = "__PRODUCT__"
+  env              = local.env
+  otlp_endpoint    = var.otlp_endpoint
+  token_secret_arn = try(module.secrets.secret_arns["observability-token"], "")
+  log_group        = "/ecs/${local.name}-worker"
+  region           = local.region
 }
 
 # ── RDS PostgreSQL 17 ─────────────────────────────────────────────────────────
@@ -225,8 +264,10 @@ module "api" {
   alb_host_headers  = ["__PRODUCT__-api-dev.qnsc.vn"] # host-based routing on the shared ALB
   health_check_path = "/v1/healthz"
 
-  # Dev Valkey sidecar (localhost:6379) — replaces the ElastiCache node.
-  additional_containers = [local.valkey_sidecar]
+  # Dev Valkey sidecar (localhost:6379, replaces the ElastiCache node) plus
+  # the OTel agent sidecar — concat, not replace: each is independently a
+  # no-op depending on its own gate.
+  additional_containers = concat([local.valkey_sidecar], module.otel_agent_api.container_definitions)
 
   secret_arns = values(module.secrets.secret_arns)
   kms_key_arn = local.kms_key_arn
@@ -270,10 +311,12 @@ module "api" {
     { name = "S3_ATTACHMENTS_BUCKET", value = module.app_bucket.bucket },
     # Email — SES in production
     { name = "EMAIL_PROVIDER", value = "ses" },
-    # Observability
+    # Observability. False until var.otlp_endpoint is set — the app must
+    # never be told to export into a void.
     { name = "LOG_LEVEL", value = "info" },
     { name = "LOG_PRETTY", value = "false" },
-    { name = "OTEL_ENABLED", value = "false" },
+    { name = "OTEL_ENABLED", value = tostring(module.otel_agent_api.enabled) },
+    { name = "OTEL_EXPORTER_OTLP_ENDPOINT", value = module.otel_agent_api.endpoint },
     { name = "OTEL_SERVICE_NAME", value = "__PRODUCT__-api" },
   ]
 
@@ -312,8 +355,10 @@ module "worker" {
   health_check_command = "pgrep -x node || exit 1"
   container_port       = 3001
 
-  # Dev Valkey sidecar (localhost:6379) — worker has its own in-task cache.
-  additional_containers = [local.valkey_sidecar]
+  # Dev Valkey sidecar (localhost:6379, worker has its own in-task cache)
+  # plus the OTel agent sidecar — concat, not replace: each is independently
+  # a no-op depending on its own gate.
+  additional_containers = concat([local.valkey_sidecar], module.otel_agent_worker.container_definitions)
 
   secret_arns = values(module.secrets.secret_arns)
   kms_key_arn = local.kms_key_arn
@@ -338,7 +383,8 @@ module "worker" {
     { name = "EMAIL_PROVIDER", value = "ses" },
     { name = "LOG_LEVEL", value = "info" },
     { name = "LOG_PRETTY", value = "false" },
-    { name = "OTEL_ENABLED", value = "false" },
+    { name = "OTEL_ENABLED", value = tostring(module.otel_agent_worker.enabled) },
+    { name = "OTEL_EXPORTER_OTLP_ENDPOINT", value = module.otel_agent_worker.endpoint },
     { name = "OTEL_SERVICE_NAME", value = "__PRODUCT__-worker" },
   ]
 
