@@ -74,9 +74,14 @@ jobs:
     # this way and this one was missed, so the check has been failing on every PR that
     # touches a .tf file. Scaffolded copies have a different repository name and run
     # normally.
-    if: github.repository != 'QNSC-VN/qnsc-infra-template'
+    #
+    # Both conditions live in ONE `if:` — a second `if:` key on this job silently
+    # overwrote the first (duplicate YAML mapping key), so the repository guard above
+    # was never actually applied; only the workspaces check ran. zizmor's stricter
+    # parser refuses to even load a workflow with a duplicate key, which is what
+    # surfaced this on the actions-security rollout.
     needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.workspaces != '[]' }}
+    if: github.repository != 'QNSC-VN/qnsc-infra-template' && needs.detect-changes.outputs.workspaces != '[]'
     runs-on: ubuntu-latest
 
     strategy:
