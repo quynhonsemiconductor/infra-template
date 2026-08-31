@@ -43,7 +43,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: QNSC-VN/qnsc-ci/actions/setup-tofu-aws@v1.10.0
+      - uses: QNSC-VN/qnsc-ci/actions/setup-tofu-aws@v1.13.1
         with:
           role-arn: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/__PRODUCT__-github-infra-apply
           aws-region: ${{ env.AWS_REGION }}
@@ -76,7 +76,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: QNSC-VN/qnsc-ci/actions/setup-tofu-aws@v1.10.0
+      - uses: QNSC-VN/qnsc-ci/actions/setup-tofu-aws@v1.13.1
         with:
           role-arn: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/__PRODUCT__-github-infra-apply
           aws-region: ${{ env.AWS_REGION }}
@@ -113,7 +113,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: QNSC-VN/qnsc-ci/actions/setup-tofu-aws@v1.10.0
+      - uses: QNSC-VN/qnsc-ci/actions/setup-tofu-aws@v1.13.1
         with:
           role-arn: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/__PRODUCT__-github-infra-apply
           aws-region: ${{ env.AWS_REGION }}

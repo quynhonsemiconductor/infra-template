@@ -78,7 +78,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: QNSC-VN/qnsc-ci/actions/scan-secrets@v1.10.0
+      - uses: QNSC-VN/qnsc-ci/actions/scan-secrets@v1.13.1
 
   actions-security:
     permissions:
