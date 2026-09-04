@@ -7,7 +7,7 @@ updates:
       day: monday
       time: "09:00"
     reviewers:
-      - QNSC-VN
+      - quynhonsemiconductor
     labels:
       - dependencies
       - ci

@@ -100,7 +100,7 @@ data "terraform_remote_state" "runtime" {
 
 # ── Secrets (scaffolding only — fill values in Secrets Manager console) ───────
 module "secrets" {
-  source      = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/secrets?ref=secrets-v2.1.1"
+  source      = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/secrets?ref=secrets-v2.1.1"
   prefix      = "__PRODUCT__/${local.env}"
   kms_key_arn = local.kms_key_arn
 
@@ -135,7 +135,7 @@ module "secrets" {
 # below is gated on the same flag, so the app is never told to export into a
 # void. Turning telemetry on is then a one-line change per environment.
 module "otel_agent_api" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.0"
 
   product       = "__PRODUCT__"
   env           = local.env
@@ -148,7 +148,7 @@ module "otel_agent_api" {
 }
 
 module "otel_agent_worker" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.0"
 
   product          = "__PRODUCT__"
   env              = local.env
@@ -160,7 +160,7 @@ module "otel_agent_worker" {
 
 # ── RDS PostgreSQL 17 ─────────────────────────────────────────────────────────
 module "rds" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/rds?ref=rds-v2.1.2"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/rds?ref=rds-v2.1.2"
 
   identifier        = local.name
   subnet_ids        = data.terraform_remote_state.runtime.outputs.data_subnet_ids
@@ -184,7 +184,7 @@ module "rds" {
 
 # ── Messaging (SQS + SNS) ─────────────────────────────────────────────────────
 module "messaging" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/messaging?ref=messaging-v1.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/messaging?ref=messaging-v1.0.0"
   prefix = local.name
 
   queues = {
@@ -213,7 +213,7 @@ module "messaging" {
 
 # ── ECS Cluster ───────────────────────────────────────────────────────────────
 module "ecs_cluster" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/ecs-cluster?ref=ecs-cluster-v2.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/ecs-cluster?ref=ecs-cluster-v2.0.0"
   name   = local.name
 
   # STATED, never inherited. "enhanced" adds per-task and per-container metrics that
@@ -236,7 +236,7 @@ module "ecs_cluster" {
 
 # ── ECS Service — API ─────────────────────────────────────────────────────────
 module "api" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/ecs-service?ref=ecs-service-v2.1.1"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/ecs-service?ref=ecs-service-v2.1.1"
 
   service_name = "api"
   cluster_name = module.ecs_cluster.cluster_name
@@ -328,7 +328,7 @@ module "api" {
 
 # ── ECS Service — Worker ──────────────────────────────────────────────────────
 module "worker" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/ecs-service?ref=ecs-service-v2.1.1"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/ecs-service?ref=ecs-service-v2.1.1"
 
   service_name = "worker"
   cluster_name = module.ecs_cluster.cluster_name
@@ -396,7 +396,7 @@ module "worker" {
 
 # ── S3 — Attachments bucket ───────────────────────────────────────────────────
 module "app_bucket" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/app-bucket?ref=app-bucket-v1.0.1"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/app-bucket?ref=app-bucket-v1.0.1"
 
   name          = "${local.name}-attachments"
   kms_key_arn   = local.kms_key_arn
@@ -417,7 +417,7 @@ module "app_bucket" {
 # Runs `pnpm migration:run` then exits. Never scheduled as a service; deploy
 # pipelines trigger it with: aws ecs run-task ...
 module "migrator" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/oneshot-task?ref=oneshot-task-v2.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/oneshot-task?ref=oneshot-task-v2.0.0"
 
   name               = "${local.name}-migrator"
   container_name     = "migrator"
@@ -459,7 +459,7 @@ module "migrator" {
 # still applies before the Cloudflare account is wired.
 module "web" {
   count  = var.cloudflare_account_id != "" ? 1 : 0
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/pages-web?ref=pages-web-v1.0.1"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/pages-web?ref=pages-web-v1.0.1"
 
   account_id  = var.cloudflare_account_id
   name        = "__PRODUCT__-develop-web"
@@ -477,7 +477,7 @@ module "web" {
 # matches the SNI __PRODUCT__-api-dev.qnsc.vn. The api ECS service already attaches
 # its /* forward rule to that HTTPS listener (see module.api.alb_listener_arn).
 module "dns_api" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/dns-record?ref=dns-record-v1.1.0"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/dns-record?ref=dns-record-v1.1.0"
 
   enabled = local.cloudflare_zone_id != ""
   zone_id = local.cloudflare_zone_id

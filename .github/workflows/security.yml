@@ -1,7 +1,7 @@
 # =============================================================================
 # Security · Scan — IaC misconfig + committed-secret gate for the live stacks.
 #
-# The shared QNSC-VN/qnsc-ci security suite is app/container oriented (Semgrep
+# The shared quynhonsemiconductor/qnsc-ci security suite is app/container oriented (Semgrep
 # TS/Node packs, Trivy image CVEs) and is the wrong tool for pure OpenTofu, so
 # this repo runs the IaC-native pair instead:
 #   • Checkov  — Terraform/OpenTofu misconfig scan over live/ (the composition
@@ -78,12 +78,12 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: QNSC-VN/qnsc-ci/actions/scan-secrets@v1.10.0
+      - uses: quynhonsemiconductor/qnsc-ci/actions/scan-secrets@v1.10.0
 
   actions-security:
     permissions:
       contents: read
       security-events: write
-    uses: QNSC-VN/qnsc-ci/.github/workflows/actions-security.yml@v1
+    uses: quynhonsemiconductor/qnsc-ci/.github/workflows/actions-security.yml@v1
     with:
       blocking: true

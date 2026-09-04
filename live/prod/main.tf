@@ -94,7 +94,7 @@ data "terraform_remote_state" "runtime" {
 
 # ── Secrets ───────────────────────────────────────────────────────────────────
 module "secrets" {
-  source               = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/secrets?ref=secrets-v2.1.1"
+  source               = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/secrets?ref=secrets-v2.1.1"
   prefix               = "__PRODUCT__/${local.env}"
   kms_key_arn          = local.kms_key_arn
   recovery_window_days = 30 # longer recovery in production
@@ -125,7 +125,7 @@ module "secrets" {
 # below is gated on the same flag, so the app is never told to export into a
 # void. Turning telemetry on is then a one-line change per environment.
 module "otel_agent_api" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.0"
 
   product       = "__PRODUCT__"
   env           = local.env
@@ -138,7 +138,7 @@ module "otel_agent_api" {
 }
 
 module "otel_agent_worker" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.0"
 
   product          = "__PRODUCT__"
   env              = local.env
@@ -150,7 +150,7 @@ module "otel_agent_worker" {
 
 # ── RDS PostgreSQL 17 (Multi-AZ in ha tier) ──────────────────────────────────
 module "rds" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/rds?ref=rds-v2.1.2"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/rds?ref=rds-v2.1.2"
 
   identifier        = local.name
   subnet_ids        = data.terraform_remote_state.runtime.outputs.data_subnet_ids
@@ -174,7 +174,7 @@ module "rds" {
 # at-rest encryption on (SOC 2); reuses the shared runtime-prod cache SG + data
 # subnets. Endpoint feeds local.redis_url (rediss://) above.
 module "cache" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/cache?ref=cache-v1.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/cache?ref=cache-v1.0.0"
 
   name              = "${local.name}-cache"
   subnet_ids        = data.terraform_remote_state.runtime.outputs.data_subnet_ids
@@ -189,7 +189,7 @@ module "cache" {
 
 # ── Messaging ─────────────────────────────────────────────────────────────────
 module "messaging" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/messaging?ref=messaging-v1.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/messaging?ref=messaging-v1.0.0"
 
   prefix                = local.name
   dlq_max_receive_count = 3 # move to DLQ faster in production
@@ -219,7 +219,7 @@ module "messaging" {
 
 # ── ECS Cluster ───────────────────────────────────────────────────────────────
 module "ecs_cluster" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/ecs-cluster?ref=ecs-cluster-v2.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/ecs-cluster?ref=ecs-cluster-v2.0.0"
   name   = local.name
 
   # STATED, never inherited. "enhanced" adds per-task and per-container metrics that
@@ -242,7 +242,7 @@ module "ecs_cluster" {
 
 # ── ECS Service — API ─────────────────────────────────────────────────────────
 module "api" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/ecs-service?ref=ecs-service-v2.1.1"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/ecs-service?ref=ecs-service-v2.1.1"
 
   service_name = "api"
   cluster_name = module.ecs_cluster.cluster_name
@@ -309,7 +309,7 @@ module "api" {
 
 # ── ECS Service — Worker ──────────────────────────────────────────────────────
 module "worker" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/ecs-service?ref=ecs-service-v2.1.1"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/ecs-service?ref=ecs-service-v2.1.1"
 
   service_name = "worker"
   cluster_name = module.ecs_cluster.cluster_name
@@ -366,7 +366,7 @@ module "worker" {
 # from native CloudWatch metrics regardless of whether var.otlp_endpoint is
 # set. ~$0.10/mo alarms, ~$3/mo dashboard.
 module "observability" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/observability?ref=observability-v4.1.0"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/observability?ref=observability-v4.1.0"
 
   name              = local.name
   region            = local.region
@@ -393,7 +393,7 @@ module "observability" {
 # cleanly before the public hostname is chosen.
 module "web" {
   count  = var.cloudflare_account_id != "" && var.web_domain != "" ? 1 : 0
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/pages-web?ref=pages-web-v1.0.1"
+  source = "git::https://github.com/quynhonsemiconductor/qnsc-tf-modules.git//modules/pages-web?ref=pages-web-v1.0.1"
 
   account_id  = var.cloudflare_account_id
   name        = "__PRODUCT__-prod-web"
