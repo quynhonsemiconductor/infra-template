@@ -66,3 +66,14 @@ variable "single_tenant_slug" {
   default     = ""
   description = "single mode only: url-safe slug of the one tenant."
 }
+
+variable "otlp_endpoint" {
+  type        = string
+  default     = ""
+  description = <<-EOT
+    Grafana Cloud's unified OTLP endpoint (qnsc-infra/live/observability's
+    otlp_endpoint output). Empty (the default) makes every otel_agent module
+    below a no-op — OTEL_ENABLED stays "false" and no sidecar container is
+    created, so the app is never told to export into a void.
+  EOT
+}

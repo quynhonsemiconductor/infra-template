@@ -100,7 +100,7 @@ data "terraform_remote_state" "runtime" {
 
 # ── Secrets (scaffolding only — fill values in Secrets Manager console) ───────
 module "secrets" {
-  source      = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/secrets?ref=secrets-v2.1.1"
+  source      = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/secrets?ref=secrets-v2.1.1"
   prefix      = "__PRODUCT__/${local.env}"
   kms_key_arn = local.kms_key_arn
 
@@ -109,19 +109,58 @@ module "secrets" {
   # recreate. Prod keeps the default recovery window for safety.
   recovery_window_days = 0
 
-  secret_names = {
+  secret_names = merge(var.otlp_endpoint == "" ? {} : {
+    # The COMPLETE Authorization header the collector sidecar sends upstream,
+    # e.g. `Basic base64(instanceID:token)` — not the bare token. See
+    # modules/observability-agent's README for the exact
+    # `aws secretsmanager put-secret-value` command, filled with
+    # qnsc-infra/live/observability's otlp_stack_id + otlp_push_token outputs.
+    "observability-token" = "Authorization header for the OTLP backend (e.g. 'Basic <base64>')"
+    }, {
     "db-url"      = "PostgreSQL connection URL for the app"
     "jwt-private" = "EC P-256 (ES256) private key (PEM, base64-encoded)"
     "jwt-public"  = "EC P-256 (ES256) public key (PEM, base64-encoded)"
     "csrf-secret" = "CSRF token signing secret"
-  }
+  })
 
   tags = { Environment = local.env }
 }
 
+# ── OpenTelemetry sidecars ────────────────────────────────────────────────────
+# One per task, not one shared collector — each pushes straight out to
+# Grafana Cloud over the task's own NAT egress. No ingress, no gateway, no
+# tunnel needed: see qnsc-infra/live/observability's header comment for why.
+# Both are a no-op until var.otlp_endpoint is set AND the observability-token
+# secret holds a value — the module returns empty lists, and OTEL_ENABLED
+# below is gated on the same flag, so the app is never told to export into a
+# void. Turning telemetry on is then a one-line change per environment.
+module "otel_agent_api" {
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.0"
+
+  product       = "__PRODUCT__"
+  env           = local.env
+  otlp_endpoint = var.otlp_endpoint
+  # try(): the secret is not created while the OTel path is dormant, and this
+  # module is a no-op in that state anyway — an absent ARN is correct input.
+  token_secret_arn = try(module.secrets.secret_arns["observability-token"], "")
+  log_group        = "/ecs/${local.name}-api"
+  region           = local.region
+}
+
+module "otel_agent_worker" {
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.0"
+
+  product          = "__PRODUCT__"
+  env              = local.env
+  otlp_endpoint    = var.otlp_endpoint
+  token_secret_arn = try(module.secrets.secret_arns["observability-token"], "")
+  log_group        = "/ecs/${local.name}-worker"
+  region           = local.region
+}
+
 # ── RDS PostgreSQL 17 ─────────────────────────────────────────────────────────
 module "rds" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/rds?ref=rds-v2.1.2"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/rds?ref=rds-v2.1.2"
 
   identifier        = local.name
   subnet_ids        = data.terraform_remote_state.runtime.outputs.data_subnet_ids
@@ -145,7 +184,7 @@ module "rds" {
 
 # ── Messaging (SQS + SNS) ─────────────────────────────────────────────────────
 module "messaging" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/messaging?ref=messaging-v1.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/messaging?ref=messaging-v1.0.0"
   prefix = local.name
 
   queues = {
@@ -174,7 +213,7 @@ module "messaging" {
 
 # ── ECS Cluster ───────────────────────────────────────────────────────────────
 module "ecs_cluster" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/ecs-cluster?ref=ecs-cluster-v2.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/ecs-cluster?ref=ecs-cluster-v2.0.0"
   name   = local.name
 
   # STATED, never inherited. "enhanced" adds per-task and per-container metrics that
@@ -197,7 +236,7 @@ module "ecs_cluster" {
 
 # ── ECS Service — API ─────────────────────────────────────────────────────────
 module "api" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/ecs-service?ref=ecs-service-v2.1.1"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/ecs-service?ref=ecs-service-v2.1.1"
 
   service_name = "api"
   cluster_name = module.ecs_cluster.cluster_name
@@ -225,8 +264,10 @@ module "api" {
   alb_host_headers  = ["__PRODUCT__-api-dev.qnsc.vn"] # host-based routing on the shared ALB
   health_check_path = "/v1/healthz"
 
-  # Dev Valkey sidecar (localhost:6379) — replaces the ElastiCache node.
-  additional_containers = [local.valkey_sidecar]
+  # Dev Valkey sidecar (localhost:6379, replaces the ElastiCache node) plus
+  # the OTel agent sidecar — concat, not replace: each is independently a
+  # no-op depending on its own gate.
+  additional_containers = concat([local.valkey_sidecar], module.otel_agent_api.container_definitions)
 
   secret_arns = values(module.secrets.secret_arns)
   kms_key_arn = local.kms_key_arn
@@ -270,10 +311,12 @@ module "api" {
     { name = "S3_ATTACHMENTS_BUCKET", value = module.app_bucket.bucket },
     # Email — SES in production
     { name = "EMAIL_PROVIDER", value = "ses" },
-    # Observability
+    # Observability. False until var.otlp_endpoint is set — the app must
+    # never be told to export into a void.
     { name = "LOG_LEVEL", value = "info" },
     { name = "LOG_PRETTY", value = "false" },
-    { name = "OTEL_ENABLED", value = "false" },
+    { name = "OTEL_ENABLED", value = tostring(module.otel_agent_api.enabled) },
+    { name = "OTEL_EXPORTER_OTLP_ENDPOINT", value = module.otel_agent_api.endpoint },
     { name = "OTEL_SERVICE_NAME", value = "__PRODUCT__-api" },
   ]
 
@@ -285,7 +328,7 @@ module "api" {
 
 # ── ECS Service — Worker ──────────────────────────────────────────────────────
 module "worker" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/ecs-service?ref=ecs-service-v2.1.1"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/ecs-service?ref=ecs-service-v2.1.1"
 
   service_name = "worker"
   cluster_name = module.ecs_cluster.cluster_name
@@ -312,8 +355,10 @@ module "worker" {
   health_check_command = "pgrep -x node || exit 1"
   container_port       = 3001
 
-  # Dev Valkey sidecar (localhost:6379) — worker has its own in-task cache.
-  additional_containers = [local.valkey_sidecar]
+  # Dev Valkey sidecar (localhost:6379, worker has its own in-task cache)
+  # plus the OTel agent sidecar — concat, not replace: each is independently
+  # a no-op depending on its own gate.
+  additional_containers = concat([local.valkey_sidecar], module.otel_agent_worker.container_definitions)
 
   secret_arns = values(module.secrets.secret_arns)
   kms_key_arn = local.kms_key_arn
@@ -338,7 +383,8 @@ module "worker" {
     { name = "EMAIL_PROVIDER", value = "ses" },
     { name = "LOG_LEVEL", value = "info" },
     { name = "LOG_PRETTY", value = "false" },
-    { name = "OTEL_ENABLED", value = "false" },
+    { name = "OTEL_ENABLED", value = tostring(module.otel_agent_worker.enabled) },
+    { name = "OTEL_EXPORTER_OTLP_ENDPOINT", value = module.otel_agent_worker.endpoint },
     { name = "OTEL_SERVICE_NAME", value = "__PRODUCT__-worker" },
   ]
 
@@ -350,7 +396,7 @@ module "worker" {
 
 # ── S3 — Attachments bucket ───────────────────────────────────────────────────
 module "app_bucket" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/app-bucket?ref=app-bucket-v1.0.1"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/app-bucket?ref=app-bucket-v1.0.1"
 
   name          = "${local.name}-attachments"
   kms_key_arn   = local.kms_key_arn
@@ -371,7 +417,7 @@ module "app_bucket" {
 # Runs `pnpm migration:run` then exits. Never scheduled as a service; deploy
 # pipelines trigger it with: aws ecs run-task ...
 module "migrator" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/oneshot-task?ref=oneshot-task-v2.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/oneshot-task?ref=oneshot-task-v2.0.0"
 
   name               = "${local.name}-migrator"
   container_name     = "migrator"
@@ -413,7 +459,7 @@ module "migrator" {
 # still applies before the Cloudflare account is wired.
 module "web" {
   count  = var.cloudflare_account_id != "" ? 1 : 0
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/pages-web?ref=pages-web-v1.0.1"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/pages-web?ref=pages-web-v1.0.1"
 
   account_id  = var.cloudflare_account_id
   name        = "__PRODUCT__-develop-web"
@@ -431,7 +477,7 @@ module "web" {
 # matches the SNI __PRODUCT__-api-dev.qnsc.vn. The api ECS service already attaches
 # its /* forward rule to that HTTPS listener (see module.api.alb_listener_arn).
 module "dns_api" {
-  source = "git::https://github.com/QNSC-VN/qnsc-tf-modules.git//modules/dns-record?ref=dns-record-v1.1.0"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/dns-record?ref=dns-record-v1.1.0"
 
   enabled = local.cloudflare_zone_id != ""
   zone_id = local.cloudflare_zone_id

@@ -61,7 +61,7 @@ product → keep it local. This avoids premature abstraction *and* copy-paste dr
 
 ```bash
 # 1. Create the repo from this template (GitHub "Use this template", or clone)
-git clone git@github.com:QNSC-VN/qnsc-infra-template.git myproduct-infra
+git clone git@github.com:quynhonsemiconductor/infra-template.git myproduct-infra
 cd myproduct-infra
 
 # 2. Replace the __PRODUCT__ placeholder everywhere

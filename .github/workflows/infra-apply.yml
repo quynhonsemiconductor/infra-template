@@ -30,7 +30,7 @@ jobs:
     # The template repo keeps the unresolved `__PRODUCT__` placeholder role ARN,
     # so OIDC role assumption can never succeed here. Scaffolded copies have a
     # different repository name and run normally.
-    if: github.repository != 'QNSC-VN/qnsc-infra-template'
+    if: github.repository != 'quynhonsemiconductor/infra-template'
     runs-on: ubuntu-latest
     environment: shared
     permissions:
@@ -43,7 +43,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: QNSC-VN/qnsc-ci/actions/setup-tofu-aws@v1.10.0
+      - uses: quynhonsemiconductor/ci/actions/setup-tofu-aws@v1
         with:
           role-arn: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/__PRODUCT__-github-infra-apply
           aws-region: ${{ env.AWS_REGION }}
@@ -63,7 +63,7 @@ jobs:
 
   apply-develop:
     needs: apply-shared
-    if: github.repository != 'QNSC-VN/qnsc-infra-template'
+    if: github.repository != 'quynhonsemiconductor/infra-template'
     runs-on: ubuntu-latest
     environment: develop
     permissions:
@@ -76,7 +76,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: QNSC-VN/qnsc-ci/actions/setup-tofu-aws@v1.10.0
+      - uses: quynhonsemiconductor/ci/actions/setup-tofu-aws@v1
         with:
           role-arn: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/__PRODUCT__-github-infra-apply
           aws-region: ${{ env.AWS_REGION }}
@@ -100,7 +100,7 @@ jobs:
 
   apply-prod:
     needs: apply-develop
-    if: github.repository != 'QNSC-VN/qnsc-infra-template'
+    if: github.repository != 'quynhonsemiconductor/infra-template'
     runs-on: ubuntu-latest
     environment: production   # requires manual approval in GitHub Settings
     permissions:
@@ -113,7 +113,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: QNSC-VN/qnsc-ci/actions/setup-tofu-aws@v1.10.0
+      - uses: quynhonsemiconductor/ci/actions/setup-tofu-aws@v1
         with:
           role-arn: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/__PRODUCT__-github-infra-apply
           aws-region: ${{ env.AWS_REGION }}

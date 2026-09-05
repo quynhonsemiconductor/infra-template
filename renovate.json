@@ -12,7 +12,7 @@
     {
       "description": "qnsc-tf-modules: shared Terraform modules pinned by per-module tag (e.g. cdn-v1.0.0). The 'compatibility' capture group is the module prefix, so Renovate only proposes updates WITHIN the same module's tags (cdn-* never bumps to network-*).",
       "matchManagers": ["terraform"],
-      "matchSourceUrls": ["https://github.com/QNSC-VN/qnsc-tf-modules{/,}**"],
+      "matchSourceUrls": ["https://github.com/quynhonsemiconductor/tf-modules{/,}**"],
       "versioning": "regex:^(?<compatibility>[a-z-]+)-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$",
       "groupName": "qnsc-tf-modules",
       "commitMessageTopic": "shared module {{depName}}"
