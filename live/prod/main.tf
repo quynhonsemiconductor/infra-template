@@ -125,7 +125,7 @@ module "secrets" {
 # below is gated on the same flag, so the app is never told to export into a
 # void. Turning telemetry on is then a one-line change per environment.
 module "otel_agent_api" {
-  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.1"
 
   product       = "__PRODUCT__"
   env           = local.env
