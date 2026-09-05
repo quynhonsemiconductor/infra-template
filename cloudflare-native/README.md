@@ -37,7 +37,7 @@ cloudflare-native/
 
 ## CI
 
-`security.yml` calls the shared `quynhonsemiconductor/qnsc-ci/.github/workflows/security.yml@v1`
+`security.yml` calls the shared `quynhonsemiconductor/ci/.github/workflows/security.yml@v1`
 with `scan_container: false` — the same Semgrep + Gitleaks + osv-scanner gate the
 AWS products run, minus the container scan (there's no Dockerfile here). Add your
 own build/deploy workflow alongside it.

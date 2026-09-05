@@ -27,7 +27,7 @@ jobs:
     # this way and this one was missed, so the check has been failing on every PR that
     # touches a .tf file. Scaffolded copies have a different repository name and run
     # normally.
-    if: github.repository != 'quynhonsemiconductor/qnsc-infra-template'
+    if: github.repository != 'quynhonsemiconductor/infra-template'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -38,7 +38,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: quynhonsemiconductor/qnsc-ci/actions/setup-tofu-aws@v1.10.0
+      - uses: quynhonsemiconductor/ci/actions/setup-tofu-aws@v1
         with:
           role-arn: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/__PRODUCT__-github-infra-plan
           aws-region: ${{ env.AWS_REGION }}
@@ -88,7 +88,7 @@ jobs:
     # parser refuses to even load a workflow with a duplicate key, which is what
     # surfaced this on the actions-security rollout.
     needs: detect-changes
-    if: github.repository != 'quynhonsemiconductor/qnsc-infra-template' && needs.detect-changes.outputs.workspaces != '[]'
+    if: github.repository != 'quynhonsemiconductor/infra-template' && needs.detect-changes.outputs.workspaces != '[]'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -105,7 +105,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: quynhonsemiconductor/qnsc-ci/actions/setup-tofu-aws@v1.10.0
+      - uses: quynhonsemiconductor/ci/actions/setup-tofu-aws@v1
         with:
           role-arn: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/__PRODUCT__-github-infra-plan
           aws-region: ${{ env.AWS_REGION }}
