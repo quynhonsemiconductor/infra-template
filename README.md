@@ -88,7 +88,7 @@ live/
 ```
 
 Then **compose the modules this product needs** in `live/develop` and
-`live/prod`. See `rally-infra` / `opshub-infra` for full worked examples — they
+`live/prod`. See `rova` / `opshub` for full worked examples — they
 follow the same Option A shape (shared runtime layer + per-product RDS/Fargate).
 
 ---
