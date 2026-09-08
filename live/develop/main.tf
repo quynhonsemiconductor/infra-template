@@ -135,7 +135,7 @@ module "secrets" {
 # below is gated on the same flag, so the app is never told to export into a
 # void. Turning telemetry on is then a one-line change per environment.
 module "otel_agent_api" {
-  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.1"
 
   product       = "__PRODUCT__"
   env           = local.env
@@ -148,7 +148,7 @@ module "otel_agent_api" {
 }
 
 module "otel_agent_worker" {
-  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.1"
 
   product          = "__PRODUCT__"
   env              = local.env
@@ -236,7 +236,7 @@ module "ecs_cluster" {
 
 # ── ECS Service — API ─────────────────────────────────────────────────────────
 module "api" {
-  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/ecs-service?ref=ecs-service-v2.1.1"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/ecs-service?ref=ecs-service-v2.3.2"
 
   service_name = "api"
   cluster_name = module.ecs_cluster.cluster_name
@@ -328,7 +328,7 @@ module "api" {
 
 # ── ECS Service — Worker ──────────────────────────────────────────────────────
 module "worker" {
-  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/ecs-service?ref=ecs-service-v2.1.1"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/ecs-service?ref=ecs-service-v2.3.2"
 
   service_name = "worker"
   cluster_name = module.ecs_cluster.cluster_name
