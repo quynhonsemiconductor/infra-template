@@ -1,18 +1,49 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "enabled": false,
+  "description": [
+    "DISABLED DELIBERATELY. This repository uses Dependabot (.github/dependabot.yml),",
+    "not Renovate — the one exception in an org that is otherwise all Renovate.",
+    "",
+    "The reason is empirical rather than preference: Renovate has never processed",
+    "this repository. The GitHub App is installed org-wide (repository_selection=",
+    "all) and this file has always been valid, yet there is no Dependency Dashboard",
+    "and not one Renovate PR has ever been opened here. Every repo that Renovate",
+    "does process has both. The remaining explanation is per-repo enablement in the",
+    "Mend Developer Portal, which is UI-only.",
+    "",
+    "`enabled: false` rather than deleting this file: if the repo is ever switched",
+    "on at the Mend level, deleting would leave Renovate running on its DEFAULTS",
+    "alongside Dependabot — two bots proposing the same bump, which is exactly the",
+    "duplication that left 31 stale PRs across this org. This way it stays off",
+    "until somebody removes this line on purpose.",
+    "",
+    "The rules below are kept so they are not rewritten from scratch if that day",
+    "comes. To switch over: enable the repo in Mend, delete .github/dependabot.yml,",
+    "set enabled true, and extend local>quynhonsemiconductor/.github:renovate-config",
+    "so this repo inherits org policy instead of the private copy below."
+  ],
   "extends": [
     "config:recommended",
     ":dependencyDashboard",
     ":semanticCommits"
   ],
   "timezone": "Asia/Ho_Chi_Minh",
-  "schedule": ["before 9am on monday"],
-  "labels": ["dependencies"],
+  "schedule": [
+    "before 9am on monday"
+  ],
+  "labels": [
+    "dependencies"
+  ],
   "packageRules": [
     {
       "description": "tf-modules: shared Terraform modules pinned by per-module tag (e.g. cdn-v1.0.0). The 'compatibility' capture group is the module prefix, so Renovate only proposes updates WITHIN the same module's tags (cdn-* never bumps to network-*).",
-      "matchManagers": ["terraform"],
-      "matchSourceUrls": ["https://github.com/quynhonsemiconductor/tf-modules{/,}**"],
+      "matchManagers": [
+        "terraform"
+      ],
+      "matchSourceUrls": [
+        "https://github.com/quynhonsemiconductor/tf-modules{/,}**"
+      ],
       "versioning": "regex:^(?<compatibility>[a-z-]+)-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$",
       "groupName": "tf-modules",
       "commitMessageTopic": "shared module {{depName}}"
