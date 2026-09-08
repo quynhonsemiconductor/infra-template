@@ -1,3 +1,24 @@
+# =============================================================================
+# Dependabot is deliberately the dependency tool for this repo, unlike the rest
+# of the org, which uses Renovate. Renovate has never processed this repository
+# despite a valid renovate.json and an org-wide app install, so retiring
+# Dependabot here would leave nothing running. Kept byte-identical to infra's
+# copy: this repo is the TEMPLATE the live one is generated from, and the two
+# drifting is how infra-template ended up behind on infra-plan.yml as well.
+#
+# GROUPS are the point of this file's current shape. Without them Dependabot
+# opens one PR per dependency per week — the flood that left 31 stale PRs across
+# this org before Renovate's grouping replaced it elsewhere. One PR per
+# ecosystem per week is reviewable; nine are not.
+#
+# NO `reviewers:` KEY, deliberately. Both this repo and infra-template used to
+# set one and it did nothing: the review requests on Dependabot PRs come from
+# CODEOWNERS (@quynhonsemiconductor/platform-infra), which the ruleset enforces
+# via require_code_owner_review. Verified by reading the actual requested
+# reviewers on a live Dependabot PR — the configured user did not appear.
+# This repo's value was worse than useless: it named the ORGANISATION, which is
+# not a valid reviewer at all.
+# =============================================================================
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -6,26 +27,15 @@ updates:
       interval: weekly
       day: monday
       time: "09:00"
-    reviewers:
-      - quynhonsemiconductor
     labels:
       - dependencies
       - ci
     commit-message:
       prefix: "ci(deps)"
+    groups:
+      actions:
+        patterns: ["*"]
 
-  # Shared Terraform modules from tf-modules, pinned by git tag as
-  # `?ref=<module>-vX.Y.Z`. WITHOUT THIS ECOSYSTEM every module bump is manual, and that
-  # is exactly how the drift happened: ecs-cluster sat at v1.0.0 in both products while
-  # v2.0.0 was released, and qnsc-infra-template — the repo new products are created from
-  # — rotted to ecr v1.1.0, ecs-service v1.3.0 and secrets v1.1.0.
-  #
-  # `directories` with a GLOB, not a fixed list. A new environment directory is picked up
-  # without editing this file — a hand-maintained list of places to look is the same
-  # defect the pin-drift report had when it named its consumer repos by hand.
-  #
-  # chore(deps), not infra(deps): the PR-title check only accepts the conventional-commit
-  # types, and a rejected title blocks the very PR this exists to open.
   - package-ecosystem: "terraform"
     directories: ["/live/*"]
     schedule:
@@ -34,26 +44,13 @@ updates:
     labels: ["dependencies"]
     commit-message:
       prefix: "chore(deps)"
-    # PROVIDERS IGNORED, MODULES UPDATED — and the first half is not optional.
-    #
-    # Dependabot's terraform updater treats providers and modules as one dependency set.
-    # Across several directories it tried to rewrite a `required_providers` block in a
-    # file that has none and threw, failing the whole job:
-    #
-    #   ERROR Error processing hashicorp/aws (RuntimeError)
-    #   ERROR Content didn't change!
-    #         terraform/lib/dependabot/terraform/file_updater.rb:34
-    #
-    # So no module updates were produced either — the run failed before opening anything.
-    #
-    # Ignoring providers is also the right POLICY, not merely a workaround. The `~>`
-    # constraints on aws and cloudflare are deliberate, and an automatic major bump of the
-    # AWS provider against live state is not something to receive on a Monday morning.
-    #
-    # `ignore` rather than an `allow` allowlist for the modules: if a new provider is added
-    # later, this fails loudly again and gets a decision. An allowlist whose pattern stopped
-    # matching would produce NO updates and no error, which is the silent failure this whole
-    # effort exists to remove.
+    groups:
+      terraform:
+        patterns: ["*"]
+    # NOTE, not endorsement: this blocks ALL hashicorp and cloudflare provider
+    # updates, security releases included. That may be deliberate — providers are
+    # pinned in .terraform.lock.hcl and moved on purpose — but it is a policy
+    # worth re-deciding rather than inheriting silently.
     ignore:
       - dependency-name: "hashicorp/*"
       - dependency-name: "cloudflare/*"
