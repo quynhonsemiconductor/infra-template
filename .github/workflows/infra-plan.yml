@@ -68,12 +68,17 @@ jobs:
             | grep -v '^live$' \
             | jq -Rc '[.,inputs]' \
             | jq -sc 'add // []')
-          MODULES_CHANGED=$(git diff --name-only "origin/$BASE_REF...HEAD" \
-            | grep '^modules/' | wc -l)
-          if [ "$MODULES_CHANGED" -gt 0 ]; then
+          # `grep -q` inside the `if`, not `grep -c` on its own line: GitHub's
+          # default shell is `bash -e`, and grep exits 1 when it matches nothing
+          # — which is the COMMON case here. As a bare command that aborts the
+          # step; inside an `if` condition the non-zero status is the branch, not
+          # a failure. The previous `grep | wc -l` was safe for the same reason a
+          # pipeline's status is its LAST command's, but shellcheck flags it
+          # (SC2126) and the naive fix is the one that breaks.
+          if git diff --name-only "origin/$BASE_REF...HEAD" | grep -q '^modules/'; then
             CHANGED='["live/_shared","live/develop","live/prod"]'
           fi
-          echo "workspaces=$CHANGED" >> $GITHUB_OUTPUT
+          echo "workspaces=$CHANGED" >> "$GITHUB_OUTPUT"
 
   plan:
     # The template repo keeps the unresolved `__PRODUCT__` placeholder role ARN, so OIDC
