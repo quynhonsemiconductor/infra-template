@@ -125,7 +125,7 @@ module "secrets" {
 # below is gated on the same flag, so the app is never told to export into a
 # void. Turning telemetry on is then a one-line change per environment.
 module "otel_agent_api" {
-  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.1"
 
   product       = "__PRODUCT__"
   env           = local.env
@@ -138,7 +138,7 @@ module "otel_agent_api" {
 }
 
 module "otel_agent_worker" {
-  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/observability-agent?ref=observability-agent-v1.0.1"
 
   product          = "__PRODUCT__"
   env              = local.env
@@ -174,7 +174,7 @@ module "rds" {
 # at-rest encryption on (SOC 2); reuses the shared runtime-prod cache SG + data
 # subnets. Endpoint feeds local.redis_url (rediss://) above.
 module "cache" {
-  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/cache?ref=cache-v1.0.0"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/cache?ref=cache-v1.1.0"
 
   name              = "${local.name}-cache"
   subnet_ids        = data.terraform_remote_state.runtime.outputs.data_subnet_ids
@@ -242,7 +242,7 @@ module "ecs_cluster" {
 
 # ── ECS Service — API ─────────────────────────────────────────────────────────
 module "api" {
-  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/ecs-service?ref=ecs-service-v2.1.1"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/ecs-service?ref=ecs-service-v2.3.2"
 
   service_name = "api"
   cluster_name = module.ecs_cluster.cluster_name
@@ -309,7 +309,7 @@ module "api" {
 
 # ── ECS Service — Worker ──────────────────────────────────────────────────────
 module "worker" {
-  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/ecs-service?ref=ecs-service-v2.1.1"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/ecs-service?ref=ecs-service-v2.3.2"
 
   service_name = "worker"
   cluster_name = module.ecs_cluster.cluster_name
@@ -366,7 +366,7 @@ module "worker" {
 # from native CloudWatch metrics regardless of whether var.otlp_endpoint is
 # set. ~$0.10/mo alarms, ~$3/mo dashboard.
 module "observability" {
-  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/observability?ref=observability-v4.1.0"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/observability?ref=observability-v4.3.0"
 
   name              = local.name
   region            = local.region
