@@ -1,3 +1,8 @@
+# tflint-ignore: terraform_unused_declarations
+# Deliberately unused in this stack — its own description says why: the ALB is
+# shared and lives in runtime-dev. The declaration is the documented contract for
+# the TF_VAR CI wiring, so deleting it to satisfy a linter would remove the
+# interface and leave the wiring undocumented.
 variable "acm_cert_arn" {
   type        = string
   default     = ""

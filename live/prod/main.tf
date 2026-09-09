@@ -47,7 +47,10 @@ locals {
   env    = "production"
   name   = "__PRODUCT__-prod"
   region = "ap-southeast-1"
-  azs    = ["ap-southeast-1a", "ap-southeast-1b", "ap-southeast-1c"]
+  # tflint-ignore: terraform_unused_declarations
+  # Scaffolding, not dead code: a copy wires this into whichever module needs
+  # subnets. Unused in the template by construction.
+  azs = ["ap-southeast-1a", "ap-southeast-1b", "ap-southeast-1c"]
 
   kms_key_arn        = data.terraform_remote_state.shared.outputs.kms_key_arn
   cloudflare_zone_id = try(data.terraform_remote_state.shared.outputs.cloudflare_zone_id, "")
@@ -63,6 +66,9 @@ locals {
 
   # Cloudflare IPv4 ranges — single source of truth in qnsc-infra bootstrap
   # (read via _shared remote state), so a CF range change is one edit there.
+  # tflint-ignore: terraform_unused_declarations
+  # Read here as the single source (see the comment above), CONSUMED in
+  # runtime-dev's ingress rules. Unused in this stack on purpose.
   cloudflare_ipv4 = data.terraform_remote_state.shared.outputs.cloudflare_ipv4
 
   # prod_tier switch (Option A): lean = single-AZ DB + 1 task/svc; ha = multi-AZ
