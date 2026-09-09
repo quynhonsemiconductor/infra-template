@@ -51,7 +51,10 @@ locals {
   env    = "develop"
   name   = "__PRODUCT__-develop"
   region = "ap-southeast-1"
-  azs    = ["ap-southeast-1a", "ap-southeast-1b", "ap-southeast-1c"]
+  # Scaffolding, not dead code: a copy wires this into whichever module needs
+  # subnets. Unused in the template by construction.
+  # tflint-ignore: terraform_unused_declarations
+  azs = ["ap-southeast-1a", "ap-southeast-1b", "ap-southeast-1c"]
 
   kms_key_arn        = data.terraform_remote_state.shared.outputs.kms_key_arn
   cloudflare_zone_id = try(data.terraform_remote_state.shared.outputs.cloudflare_zone_id, "")
@@ -65,6 +68,9 @@ locals {
   # (read via _shared remote state), so a CF range change is one edit there.
   # The API subdomain is Cloudflare-proxied (orange), so the ALB only ever sees
   # Cloudflare edge IPs — ingress is locked to these in runtime-dev.
+  # Read here as the single source (see the comment above), CONSUMED in
+  # runtime-dev's ingress rules. Unused in this stack on purpose.
+  # tflint-ignore: terraform_unused_declarations
   cloudflare_ipv4 = data.terraform_remote_state.shared.outputs.cloudflare_ipv4
 
   # ECR URLs derived from current AWS account — no hardcoded placeholder
