@@ -17,7 +17,13 @@
 # it scans this repo's OWN .github/workflows/*.yml. Blocking — the initial
 # rollout ran clean, no findings.
 #
-# NOTE: this is the template repo — keep this file in sync with qnsc-infra.
+# NOTE: this is the template repo. The Checkov scan itself is no longer duplicated
+# here — it comes from ci/actions/iac-checkov@v1, so the tool, its version and its
+# flags stay in step with infra automatically. That is deliberate: the hand-written
+# "keep this file in sync" instruction this line used to carry had already failed
+# (this repo sat on checkov-action v12.3119.0 while infra moved to v12.3122.0).
+# What still needs to match infra by hand is the surrounding job shape and the
+# soft-fail decision.
 # =============================================================================
 name: Security · Scan
 
@@ -38,6 +44,9 @@ permissions:
 
 jobs:
   checkov:
+    # The job NAME is the required-check name on main (`checkov (IaC misconfig)`).
+    # It must not change — hence a COMPOSITE action, not a reusable workflow,
+    # whose check would report as `checkov / <inner>` and never fire again.
     name: checkov (IaC misconfig)
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -49,24 +58,19 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Checkov scan
-        uses: bridgecrewio/checkov-action@f967808197a8d784d3e72919f38c3ff0cda7884e # v12.3122.0
+      # REPORT-ONLY, unchanged here on purpose: changing the implementation and
+      # the enforcement together would make a red check ambiguous between "the
+      # shared action differs" and "this repo has findings". Flip to
+      # soft-fail 'false' with a live/.checkov.baseline once triaged.
+      #
+      # Adopting the shared action also closes a real drift: this repo was pinned
+      # to checkov-action v12.3119.0 while infra had moved to v12.3122.0, which is
+      # exactly what the header's "keep this file in sync with qnsc-infra"
+      # instruction was supposed to prevent and did not.
+      - uses: quynhonsemiconductor/ci/actions/iac-checkov@v1
         with:
           directory: live/
-          framework: terraform
-          quiet: true
-          output_format: cli,sarif
-          output_file_path: console,checkov.sarif
-          # REPORT-ONLY until a baseline is committed — see header. Flip to false
-          # (with baseline: live/.checkov.baseline) to enforce on NEW findings.
-          soft_fail: true
-
-      - name: Upload SARIF
-        if: always()
-        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4
-        with:
-          sarif_file: checkov.sarif
-        continue-on-error: true
+          soft-fail: 'true'
 
   secret-scan:
     name: Secret scan (Gitleaks)

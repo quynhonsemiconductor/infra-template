@@ -21,31 +21,56 @@ env:
 
 jobs:
   fmt:
+    # The job NAME is a required-check name in scaffolded copies. It must not
+    # change, which is why this is a COMPOSITE action rather than a reusable
+    # workflow — a reusable reports as `fmt / <inner job>`, renaming the check.
     name: tofu fmt check
-    # The template repo keeps the unresolved `__PRODUCT__` placeholder role ARN, so OIDC
-    # role assumption can never succeed here — infra-apply.yml already guards every job
-    # this way and this one was missed, so the check has been failing on every PR that
-    # touches a .tf file. Scaffolded copies have a different repository name and run
-    # normally.
-    if: github.repository != 'quynhonsemiconductor/infra-template'
+    # THE `if:` GUARD IS GONE, and that is a fix rather than a side effect. This
+    # job was skipped in the template for one reason: it assumed
+    # `__PRODUCT__-github-infra-plan` through setup-tofu-aws, and an unresolved
+    # placeholder ARN can never assume. So the template repo has never
+    # format-checked its own Terraform — the very files every scaffolded copy is
+    # cloned from. iac-lint needs no cloud identity, so the credential, the
+    # `id-token: write` and the skip all go together, and the template now gates
+    # its own formatting like any other repo. Verified clean before enabling:
+    # `tofu fmt -check -recursive` exits 0 on this tree today.
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
-      id-token: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: quynhonsemiconductor/ci/actions/setup-tofu-aws@v1
+      - uses: quynhonsemiconductor/ci/actions/iac-lint@v1
         with:
-          role-arn: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/__PRODUCT__-github-infra-plan
-          aws-region: ${{ env.AWS_REGION }}
           tofu-version: ${{ env.TOFU_VERSION }}
+          fmt: 'true'
 
-      - name: tofu fmt -check
-        run: tofu fmt -check -recursive -diff
+  # tflint — NOT a required check, matching infra. Introduced here so scaffolded
+  # copies inherit it; findings are unknown until it has run, so it reports under
+  # its own name rather than gating anything. Needs no cloud identity either, so
+  # it runs in the template too. `validate` stays off: these stacks have real
+  # backends and validate belongs beside `tofu plan`.
+  tflint:
+    name: tflint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: quynhonsemiconductor/ci/actions/iac-lint@v1
+        with:
+          tofu-version: ${{ env.TOFU_VERSION }}
+          fmt: 'false'
+          tflint: 'true'
+          dirs: 'live/*/'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   detect-changes:
     runs-on: ubuntu-latest
