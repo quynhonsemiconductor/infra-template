@@ -80,9 +80,13 @@ variable "single_tenant_slug" {
 }
 
 variable "alarm_emails" {
-  type        = list(string)
-  default     = []
-  description = "Emails subscribed to the CloudWatch alarm SNS topic (module.observability). Empty = alarms fire with nowhere to notify — set this before go-live."
+  type = list(string)
+  # devops@qnsc.vn is an M365 SHARED MAILBOX, not an alias on a person: recipients are
+  # managed in the admin centre, so a new product scaffolded from this template inherits a
+  # working notification path without anyone remembering to set it. Confirm the
+  # subscription once from inside that mailbox — AWS delivers nothing until someone clicks.
+  default     = ["devops@qnsc.vn"]
+  description = "Emails subscribed to the CloudWatch alarm SNS topic (module.observability). Empty = alarms fire with nowhere to notify."
 }
 
 variable "otlp_endpoint" {
