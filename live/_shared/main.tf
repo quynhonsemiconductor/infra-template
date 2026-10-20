@@ -92,4 +92,4 @@ module "iam_oidc" {
 # The web SPA deploys to Cloudflare Pages (wrangler pages deploy) using a Cloudflare
 # API token, so it needs no AWS deploy role. If a product ever hosts its web build on
 # S3+CloudFront instead, add a dedicated deploy role here — but the standard is
-# Cloudflare Pages (see rally / opshub web-deploy.yml).
+# Cloudflare Pages (see rova / opshub web-deploy.yml).

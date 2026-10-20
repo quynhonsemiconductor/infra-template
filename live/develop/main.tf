@@ -231,7 +231,7 @@ module "ecs_cluster" {
   # module default — which was "enhanced" until ecs-cluster v2.0.0 changed it to "enabled".
   # A new product should not have to discover that on a bill.
   #
-  # "disabled" matches rally, qnsc-kb-backend and opshub, all of which audited their
+  # "disabled" matches rova, qnsc-kb-backend and opshub, all of which audited their
   # consumers and found none: their alarms and dashboards read AWS/ECS, AWS/ApplicationELB
   # and AWS/RDS, which are free and published regardless. Raise to "enhanced" temporarily
   # while debugging a per-container resource problem, then put it back.
