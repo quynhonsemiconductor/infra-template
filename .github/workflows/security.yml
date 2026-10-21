@@ -76,7 +76,7 @@ jobs:
       # to checkov-action v12.3119.0 while infra had moved to v12.3122.0, which is
       # exactly what the header's "keep this file in sync with qnsc-infra"
       # instruction was supposed to prevent and did not.
-      - uses: quynhonsemiconductor/ci/actions/iac-checkov@v1
+      - uses: quynhonsemiconductor/ci/actions/iac-checkov@691668f7a1bd4f4a3416f9224ae7ff7ebe831a3a # v1.23.0
         with:
           directory: live/
           soft-fail: 'true'
@@ -91,13 +91,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: quynhonsemiconductor/ci/actions/scan-secrets@v1
+      - uses: quynhonsemiconductor/ci/actions/scan-secrets@691668f7a1bd4f4a3416f9224ae7ff7ebe831a3a # v1.23.0
 
   actions-security:
     permissions:
       contents: read
       security-events: write
-    uses: quynhonsemiconductor/ci/.github/workflows/actions-security.yml@v1
+    uses: quynhonsemiconductor/ci/.github/workflows/actions-security.yml@691668f7a1bd4f4a3416f9224ae7ff7ebe831a3a # v1.23.0
     with:
       blocking: true
       combine: true # actionlint + zizmor as ONE job; the required check is `actions-security / Workflow security (actionlint, zizmor)`
