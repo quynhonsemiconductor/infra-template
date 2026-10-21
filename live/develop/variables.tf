@@ -47,8 +47,9 @@ variable "cloudflare_api_token" {
 # ""), falling back to the saas default — so develop applies cleanly without the
 # repo variables configured.
 variable "platform_admin_emails" {
-  type    = list(string)
-  default = []
+  type        = list(string)
+  default     = []
+  sensitive   = true
   description = <<-EOT
     Staff emails auto-granted workspace_admin on every SSO login. The roster names
     real people, so keep it out of git: set it in terraform.tfvars (git-ignored) or
