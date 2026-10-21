@@ -299,8 +299,10 @@ module "api" {
     # Microsoft Entra SSO — set tenant/client IDs; leave empty to disable SSO
     { name = "ENTRA_TENANT_ID", value = var.entra_tenant_id },
     { name = "ENTRA_CLIENT_ID", value = var.entra_client_id },
-    # Comma-separated emails auto-granted workspace_admin on every SSO login
-    { name = "PLATFORM_ADMIN_EMAILS", value = "nghiavt18@qnsc.vn,quangld@qnsc.vn,hieuvbm@qnsc.vn,anhntn@qnsc.vn" },
+    # Comma-separated emails auto-granted workspace_admin on every SSO login. The
+    # real roster names staff, so it is not in git: set platform_admin_emails in
+    # tfvars or TF_VAR_platform_admin_emails; empty falls back to the group mailbox.
+    { name = "PLATFORM_ADMIN_EMAILS", value = length(var.platform_admin_emails) > 0 ? join(",", var.platform_admin_emails) : "devops@qnsc.vn" },
     # Deployment mode — 'saas' = multi-tenant (self-serve signup on); 'single' =
     # packaged per customer (one tenant, signup off). Dev is normally 'saas';
     # set via the <PRODUCT>_*_DEVELOP repo vars, empty falls back to 'saas'.

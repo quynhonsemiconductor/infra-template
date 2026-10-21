@@ -46,6 +46,18 @@ variable "cloudflare_api_token" {
 # Empty-string is treated as "unset" (an unset GitHub Actions `vars.*` renders as
 # ""), falling back to the saas default — so develop applies cleanly without the
 # repo variables configured.
+variable "platform_admin_emails" {
+  type        = list(string)
+  default     = []
+  sensitive   = true
+  description = <<-EOT
+    Staff emails auto-granted workspace_admin on every SSO login. The roster names
+    real people, so keep it out of git: set it in terraform.tfvars (git-ignored) or
+    TF_VAR_platform_admin_emails from the product repo's apply workflow. Empty
+    falls back to the devops@qnsc.vn group mailbox.
+  EOT
+}
+
 variable "deployment_mode" {
   type    = string
   default = ""
