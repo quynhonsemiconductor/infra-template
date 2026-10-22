@@ -1,14 +1,5 @@
-# Default reviewers for all files
-*                           @quynhonsemiconductor/platform-infra
+# Default reviewers for all files (one team: the platform leads).
+# Enforced via the main-protection ruleset (require_code_owner_review).
+# Org docs: quynhonsemiconductor/.github → docs/ORG-GOVERNANCE.md (the area-team model).
 
-# Production live environments — requires infrastructure lead review
-live/prod/                  @quynhonsemiconductor/platform-infra
-
-# Shared infra (ECR, OIDC roles) — cross-product impact
-live/_shared/               @quynhonsemiconductor/platform-infra
-
-# All modules — changes affect all environments
-modules/                    @quynhonsemiconductor/platform-infra
-
-# CI/CD workflows
-.github/workflows/          @quynhonsemiconductor/platform-infra
+* @quynhonsemiconductor/platform-leads
