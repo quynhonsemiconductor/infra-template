@@ -2,7 +2,7 @@ terraform {
   required_version = ">= 1.9"
   required_providers {
     aws        = { source = "hashicorp/aws", version = "~> 5.0" }
-    cloudflare = { source = "cloudflare/cloudflare", version = "~> 4.0" }
+    cloudflare = { source = "cloudflare/cloudflare", version = "~> 5.28" }
   }
 
   backend "s3" {
@@ -399,7 +399,7 @@ module "observability" {
 # cleanly before the public hostname is chosen.
 module "web" {
   count  = var.cloudflare_account_id != "" && var.web_domain != "" ? 1 : 0
-  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/pages-web?ref=pages-web-v1.0.1"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/pages-web?ref=pages-web-v2.0.0"
 
   account_id  = var.cloudflare_account_id
   name        = "__PRODUCT__-prod-web"

@@ -2,7 +2,7 @@ terraform {
   required_version = ">= 1.9"
   required_providers {
     aws        = { source = "hashicorp/aws", version = "~> 5.0" }
-    cloudflare = { source = "cloudflare/cloudflare", version = "~> 4.0" }
+    cloudflare = { source = "cloudflare/cloudflare", version = "~> 5.28" }
   }
 
   backend "s3" {
@@ -467,7 +467,7 @@ module "migrator" {
 # still applies before the Cloudflare account is wired.
 module "web" {
   count  = var.cloudflare_account_id != "" ? 1 : 0
-  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/pages-web?ref=pages-web-v1.0.1"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/pages-web?ref=pages-web-v2.0.0"
 
   account_id  = var.cloudflare_account_id
   name        = "__PRODUCT__-develop-web"
@@ -485,13 +485,14 @@ module "web" {
 # matches the SNI __PRODUCT__-api-dev.qnsc.vn. The api ECS service already attaches
 # its /* forward rule to that HTTPS listener (see module.api.alb_listener_arn).
 module "dns_api" {
-  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/dns-record?ref=dns-record-v1.1.0"
+  source = "git::https://github.com/quynhonsemiconductor/tf-modules.git//modules/dns-record?ref=dns-record-v2.0.0"
 
-  enabled = local.cloudflare_zone_id != ""
-  zone_id = local.cloudflare_zone_id
-  name    = "__PRODUCT__-api-dev"
-  type    = "CNAME"
-  content = data.terraform_remote_state.runtime.outputs.alb_dns_name
-  proxied = true # orange cloud: shield the ALB, edge WAF/DDoS at Cloudflare
-  comment = "__PRODUCT__-develop API → ALB via Cloudflare proxy (managed by __PRODUCT__-infra develop)"
+  enabled   = local.cloudflare_zone_id != ""
+  zone_id   = local.cloudflare_zone_id
+  zone_name = "qnsc.vn"
+  name      = "__PRODUCT__-api-dev"
+  type      = "CNAME"
+  content   = data.terraform_remote_state.runtime.outputs.alb_dns_name
+  proxied   = true # orange cloud: shield the ALB, edge WAF/DDoS at Cloudflare
+  comment   = "__PRODUCT__-develop API → ALB via Cloudflare proxy (managed by __PRODUCT__-infra develop)"
 }
