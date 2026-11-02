@@ -1,3 +1,5 @@
+> **ARCHIVED 2026-11-02: AWS-era template, do not use.** See product-docs `platform/adr/INSTRUMENTATION-STANDARD.md` (the new-app checklist). A new app-template repo is created when the next app starts.
+
 # infra-template
 
 Starting skeleton for a **new QNSC product infrastructure repo**. Clone this,
