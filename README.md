@@ -29,6 +29,15 @@ Cloudflare-native, see [`cloudflare-native/README.md`](./cloudflare-native/READM
 
 ---
 
+## Instrumentation standard (new-service checklist item)
+
+- **Our own code: the OpenTelemetry SDK.** Use the platform-runtime / `@quynhonsemiconductor/observability` wiring and export OTLP to the platform Alloy; do not rely on eBPF auto-instrumentation for a service you write.
+- **Third-party or uninstrumented images** (a vendor service you only deploy): OBI (eBPF, Beyla), added by naming the workload in the gitops `autoInstrumentation` discovery list. RED metrics only.
+- **Infrastructure components**: their own exporters.
+- No DeepFlow. Series budget and revisit triggers: `product-docs/platform/adr/INSTRUMENTATION-STANDARD.md`.
+
+---
+
 ## The QNSC platform model (read this first)
 
 "Shared infra" does **not** mean every product runs the same infrastructure. It
